@@ -11,9 +11,12 @@ const NAV:any={household:[['/h','Dashboard'],['/h/new','Schedule'],['/h/pickups'
 const cls=({isActive}:any)=>isActive?'on':''
 function Shell(){
  const db=useDb(),me=db.users.find(u=>u.id===db.session),go=useNavigate(),loc=useLocation(),unread=db.notifs.filter(n=>n.uid===me?.id&&!n.read).length,clock=useClock()
- return <><header className="nav"><Link to="/" className="br"><i className="dot"/>KabadiLink</Link><span className="pill">Mock data · Noida pilot</span>
+ const pillText=db.dataSource==='api'?'● AWS API · Noida pilot':db.dataSource==='unavailable'?'⚠️ Backend unavailable':'Demo fallback · Offline'
+ const pillStyle=db.dataSource==='demo'?{background:'#e8772e22',color:'var(--o)',borderColor:'#e8772e55'}:db.dataSource==='unavailable'?{background:'#ff5d5d22',color:'#b3261e',borderColor:'#ff5d5d55'}:undefined
+ const srcText=db.dataSource==='api'?'live · aws':db.dataSource==='demo'?'demo fallback':'disconnected'
+ return <><header className="nav"><Link to="/" className="br"><i className="dot"/>KabadiLink</Link><span className="pill" style={pillStyle} title={db.dataSource==='unavailable'?(db.lastError||'Backend unavailable'):undefined}>{pillText}</span>
   <nav className="tabs" aria-label="Main">{me?NAV[me.role].map(([to,l]:any)=><NavLink key={to} to={to} end className={cls}>{l}</NavLink>):<NavLink to="/" end className={cls}>Home</NavLink>}{!me&&<a tabIndex={0} role="button" onClick={()=>goSim(go,loc.pathname==='/')} onKeyDown={e=>e.key==='Enter'&&goSim(go,loc.pathname==='/')}>Simulator</a>}</nav>
-  <span className="lv">{me?<><NavLink to="/notifications">🔔 {unread||''}</NavLink> · <NavLink to="/profile">{me.name}</NavLink> · <a tabIndex={0} role="button" onClick={()=>{api.logout();go('/')}}>Sign out</a> · </>:<><NavLink to="/signin">Sign in</NavLink> · </>}live · mock · {clock} <ThemeToggle/></span></header><Outlet/></>
+  <span className="lv">{me?<><NavLink to="/notifications">🔔 {unread||''}</NavLink> · <NavLink to="/profile">{me.name}</NavLink> · <a tabIndex={0} role="button" onClick={()=>{api.logout();go('/')}}>Sign out</a> · </>:<><NavLink to="/signin">Sign in</NavLink> · </>}{srcText} · {clock} <ThemeToggle/></span></header><Outlet/></>
 }
 const Guard=({role,children}:any)=>{const db=useDb(),me=db.users.find(u=>u.id===db.session)
  if(!me||!me.active)return <Navigate to="/signin" replace/>

@@ -8,11 +8,12 @@ import {Bars,HBars,Strip,Panel} from '../components/Charts'
 const useMe=()=>{const db=useDb();return {db,me:db.users.find(u=>u.id===db.session)!}}
 export function HDash(){
  const {db,me}=useMe(),mine=db.pickups.filter(p=>p.hid===me.id),paid=mine.filter(p=>p.status==='Paid'),bal=balanceOf(db.ledger,me.id),act=mine.find(p=>['Requested','Accepted','On the way'].includes(p.status))
- const kg=CATS.map(k=>paid.reduce((a,p)=>a+p.act![k],0)),recent=paid.slice(-8)
+ const kg=CATS.map(k=>paid.reduce((a,p)=>a+(p.act?.[k]||0),0)),recent=paid.slice(-8)
  return <div className="pg"><p className="ey">HOUSEHOLD</p><h2>Namaste, <em>{me.name.split(' ')[0]}.</em></h2>
-  <Strip items={[['Green Points',bal,tierOf(db.cfg,bal).name+' tier'],['Cash earned','₹'+paid.reduce((a,p)=>a+p.payout.cashTotal,0)],['Recyclable weight',paid.reduce((a,p)=>a+p.payout.kgTotal,0)+' kg'],['Pickups',mine.length,paid.length+' completed'],['Active pickup',act?act.status:'None']]}/>
+  {db.dataSource==='unavailable'&&<div className="as" style={{border:'1px solid #ff5d5d88',margin:'16px 0'}}><b style={{color:'#b3261e'}}>AWS API Unavailable</b><p style={{margin:'6px 0 0'}}>Failed to connect to AWS: {db.lastError||'Service error'}. Demo fallback is currently disabled.</p></div>}
+  <Strip items={[['Green Points',bal,tierOf(db.cfg,bal).name+' tier'],['Cash earned','₹'+paid.reduce((a,p)=>a+(p.payout?.cashTotal||0),0)],['Recyclable weight',paid.reduce((a,p)=>a+(p.payout?.kgTotal||0),0)+' kg'],['Pickups',mine.length,paid.length+' completed'],['Active pickup',act?act.status:'None']]}/>
   <div className="cols"><Panel title="What you have sorted" sub="Kilograms by material, completed pickups"><HBars max={Math.max(...kg,1)} fmt={n=>n+' kg'} rows={CATS.map((k,i)=>({label:META[k].icon+' '+META[k].name,value:kg[i],color:META[k].color}))}/></Panel>
-   <Panel title="Points per pickup" sub="Your last completed pickups"><Bars w={380} h={170} data={recent.map(p=>({label:p.id.slice(-2),values:[p.payout.total]}))} fmt={n=>String(Math.round(n))} label="Green Points earned per pickup"/></Panel></div>
+   <Panel title="Points per pickup" sub="Your last completed pickups"><Bars w={380} h={170} data={recent.map(p=>({label:p.id.slice(-2),values:[p.payout?.total||0]}))} fmt={n=>String(Math.round(n))} label="Green Points earned per pickup"/></Panel></div>
   <h3 style={{margin:'30px 0 12px'}}>{act?'Active pickup '+act.id:'No active pickup'}</h3>{act?<Workflow p={act}/>:<p>Nothing scheduled. <Link className="bt2" to="/h/new">Schedule a pickup</Link></p>}</div>
 }
 export function NewPickup(){
